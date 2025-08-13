@@ -117,8 +117,8 @@ orders (1:1) payment_intents (via Stripe)
 
 ### 1. Clone Repository
 ```bash
-git clone <repository-url>
-cd laravel-inertia-stripe
+git clone https://github.com/mmrahmanwritescode/laravel-inertia-stripe-checkout
+cd laravel-inertia-stripe-checkout
 ```
 
 ### 2. Backend Setup
