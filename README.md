@@ -7,6 +7,10 @@ A modern, full-featured food ordering system with Stripe payment processing, bui
 
 Experience the complete checkout flow with real-time payment processing and webhook integration!
 
+## Screenshots
+
+![Laravel inertia stripe checkout](https://laravelcs.com/images/github/laravel-inertia-stripe-checkout.png)
+
 ## 🛠️ Technology Stack
 
 ### Backend
@@ -327,7 +331,7 @@ This project is open-sourced software licensed under the [MIT license](https://o
 - [Building mini issue tracker with Vue3 SPA in Laravel](https://laravelcs.com/communities/projects/topics/mini-issue-tracker/posts/159)
 
 ### More Projects
-Visit [LaravelCodeSnippet.com](https://laravelcs.com) for more Laravel tutorials and projects.
+Visit [Laravelcs.com](https://laravelcs.com) for more Laravel tutorials and projects.
 
 ### Freelance Work
 Available for custom Laravel development projects. Contact: [mahfoozurrahman.com](https://www.mahfoozurrahman.com)
