@@ -9,7 +9,7 @@ Experience the complete checkout flow with real-time payment processing and webh
 
 ## Screenshots
 
-![Laravel inertia stripe checkout](https://laravelcs.com/images/github/laravel-inertia-stripe-checkout.png)
+![Laravel inertia stripe checkout](https://laravelcs.com/images/github/laravel-ineria-stripe-checkout.png)
 
 ## 🛠️ Technology Stack
 
