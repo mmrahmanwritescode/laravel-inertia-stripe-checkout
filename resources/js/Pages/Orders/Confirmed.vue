@@ -121,6 +121,95 @@
                                 </div>
                             </div>
                             
+                            <!-- Order Status Management -->
+                            <div v-if="canUpdateStatus(order.status)" class="mt-4 pt-4 border-top">
+                                <h6 class="fw-bold text-dark mb-3">
+                                    <i class="fas fa-cog me-1"></i>
+                                    Order Management
+                                </h6>
+                                
+                                <!-- Status Update Options -->
+                                <div class="row g-3">
+                                    <!-- Cancel Order -->
+                                    <div v-if="canCancelOrder(order.status)" class="col-md-6">
+                                        <div class="card border-danger">
+                                            <div class="card-body text-center py-3">
+                                                <i class="fas fa-times-circle text-danger mb-2" style="font-size: 1.5rem;"></i>
+                                                <h6 class="card-title text-danger mb-2">Cancel Order</h6>
+                                                <p class="card-text small text-muted mb-3">
+                                                    Cancel this order if you no longer need it.
+                                                    <span v-if="order.payment_method === 'stripe'">
+                                                        Refund will be processed automatically.
+                                                    </span>
+                                                </p>
+                                                <button 
+                                                    @click="showCancelConfirmation = true"
+                                                    :disabled="updating"
+                                                    class="btn btn-outline-danger btn-sm"
+                                                >
+                                                    <span v-if="updating" class="spinner-border spinner-border-sm me-1"></span>
+                                                    Cancel Order
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Confirm Order (for admin/testing purposes) -->
+                                    <div v-if="canConfirmOrder(order.status)" class="col-md-6">
+                                        <div class="card border-success">
+                                            <div class="card-body text-center py-3">
+                                                <i class="fas fa-check-circle text-success mb-2" style="font-size: 1.5rem;"></i>
+                                                <h6 class="card-title text-success mb-2">Confirm Order</h6>
+                                                <p class="card-text small text-muted mb-3">
+                                                    Mark this order as confirmed and ready for preparation.
+                                                </p>
+                                                <button 
+                                                    @click="updateOrderStatus('confirmed')"
+                                                    :disabled="updating"
+                                                    class="btn btn-outline-success btn-sm"
+                                                >
+                                                    <span v-if="updating" class="spinner-border spinner-border-sm me-1"></span>
+                                                    Confirm Order
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Mark as Completed -->
+                                    <div v-if="canCompleteOrder(order.status)" class="col-md-6">
+                                        <div class="card border-primary">
+                                            <div class="card-body text-center py-3">
+                                                <i class="fas fa-flag-checkered text-primary mb-2" style="font-size: 1.5rem;"></i>
+                                                <h6 class="card-title text-primary mb-2">Mark as Completed</h6>
+                                                <p class="card-text small text-muted mb-3">
+                                                    Mark this order as completed when {{ order.order_type === 'delivery' ? 'delivered' : 'picked up' }}.
+                                                </p>
+                                                <button 
+                                                    @click="updateOrderStatus('confirmed')"
+                                                    :disabled="updating"
+                                                    class="btn btn-outline-primary btn-sm"
+                                                >
+                                                    <span v-if="updating" class="spinner-border spinner-border-sm me-1"></span>
+                                                    Mark Completed
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Success/Error Messages -->
+                                <div v-if="updateMessage" class="mt-3">
+                                    <div 
+                                        class="alert" 
+                                        :class="updateSuccess ? 'alert-success' : 'alert-danger'"
+                                        role="alert"
+                                    >
+                                        <i :class="updateSuccess ? 'fas fa-check-circle' : 'fas fa-exclamation-triangle'" class="me-1"></i>
+                                        {{ updateMessage }}
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <!-- Notes -->
                             <div v-if="order.notes" class="mt-4 pt-4 border-top">
                                 <h6 class="fw-bold text-dark mb-2">Order Notes</h6>
@@ -168,16 +257,172 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Cancel Confirmation Modal -->
+        <div v-if="showCancelConfirmation" class="modal show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header border-0">
+                        <h5 class="modal-title text-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Cancel Order
+                        </h5>
+                        <button 
+                            @click="showCancelConfirmation = false" 
+                            type="button" 
+                            class="btn-close"
+                            :disabled="updating"
+                        ></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="text-center mb-4">
+                            <i class="fas fa-times-circle text-danger mb-3" style="font-size: 3rem;"></i>
+                            <h6>Are you sure you want to cancel this order?</h6>
+                        </div>
+                        
+                        <div class="alert alert-warning small">
+                            <strong>Order #{{ order.purchase_order_id }}</strong><br>
+                            Total: ${{ (parseFloat(order.price) + parseFloat(order.shipping_cost)).toFixed(2) }}
+                        </div>
+                        
+                        <div v-if="order.payment_method === 'stripe'" class="alert alert-info small">
+                            <i class="fas fa-info-circle me-1"></i>
+                            <strong>Refund Information:</strong> If you paid by card, the refund will be processed automatically and may take 3-5 business days to appear in your account.
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="cancelReason" class="form-label small fw-bold">Reason for cancellation (optional):</label>
+                            <select v-model="cancelReason" id="cancelReason" class="form-select">
+                                <option value="">Select a reason...</option>
+                                <option value="changed_mind">Changed my mind</option>
+                                <option value="wrong_order">Ordered wrong items</option>
+                                <option value="too_long_wait">Taking too long</option>
+                                <option value="found_better_option">Found a better option</option>
+                                <option value="payment_issue">Payment issues</option>
+                                <option value="other">Other reason</option>
+                            </select>
+                        </div>
+                        
+                        <div v-if="cancelReason === 'other'" class="mb-3">
+                            <textarea 
+                                v-model="cancelReasonText"
+                                class="form-control form-control-sm" 
+                                rows="2" 
+                                placeholder="Please specify the reason..."
+                            ></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button 
+                            @click="showCancelConfirmation = false" 
+                            type="button" 
+                            class="btn btn-secondary"
+                            :disabled="updating"
+                        >
+                            Keep Order
+                        </button>
+                        <button 
+                            @click="confirmCancelOrder()" 
+                            type="button" 
+                            class="btn btn-danger"
+                            :disabled="updating"
+                        >
+                            <span v-if="updating" class="spinner-border spinner-border-sm me-1"></span>
+                            Yes, Cancel Order
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </AppLayout>
 </template>
 
 <script setup>
-import { Link } from '@inertiajs/vue3'
+import { ref } from 'vue'
+import { Link, router } from '@inertiajs/vue3'
 import AppLayout from '@/Components/Layout/AppLayout.vue'
 
-defineProps({
+const props = defineProps({
     order: Object
 })
+
+// Reactive data for status updates
+const updating = ref(false)
+const updateMessage = ref('')
+const updateSuccess = ref(false)
+const showCancelConfirmation = ref(false)
+const cancelReason = ref('')
+const cancelReasonText = ref('')
+
+// Status management functions
+const canUpdateStatus = (status) => {
+    return ['order_in_progress', 'order_placed'].includes(status)
+}
+
+const canCancelOrder = (status) => {
+    return ['order_in_progress','confirmed'].includes(status)
+}
+
+const canConfirmOrder = (status) => {
+    return status === 'order_in_progress'
+}
+
+const canCompleteOrder = (status) => {
+    return status === 'confirmed'
+}
+
+// Update order status
+const updateOrderStatus = async (newStatus) => {
+    if (updating.value) return
+    
+    updating.value = true
+    updateMessage.value = ''
+    
+    try {
+        await router.patch(`/orders/${props.order.purchase_order_id}/status`, {
+            status: newStatus,
+            reason: cancelReason.value || null,
+            reason_text: cancelReasonText.value || null
+        }, {
+            onSuccess: (page) => {
+                updateSuccess.value = true
+                updateMessage.value = getSuccessMessage(newStatus)
+                // The page will automatically update with new order data
+            },
+            onError: (errors) => {
+                updateSuccess.value = false
+                updateMessage.value = errors.message || 'Failed to update order status. Please try again.'
+            },
+            onFinish: () => {
+                updating.value = false
+                if (showCancelConfirmation.value) {
+                    showCancelConfirmation.value = false
+                    cancelReason.value = ''
+                    cancelReasonText.value = ''
+                }
+            }
+        })
+    } catch (error) {
+        updateSuccess.value = false
+        updateMessage.value = 'An error occurred. Please try again.'
+        updating.value = false
+    }
+}
+
+// Confirm cancel order
+const confirmCancelOrder = () => {
+    updateOrderStatus('cancelled')
+}
+
+// Get success message for status update
+const getSuccessMessage = (status) => {
+    const messages = {
+        'cancelled': 'Order has been successfully cancelled.',
+        'confirmed': 'Order has been confirmed and is now being prepared.',
+        'completed': 'Order has been marked as completed. Thank you!'
+    }
+    return messages[status] || 'Order status updated successfully.'
+}
 
 const getStatusMessage = (status) => {
     const messages = {

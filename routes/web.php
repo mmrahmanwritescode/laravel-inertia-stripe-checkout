@@ -35,6 +35,7 @@ Route::post('/checkout/payment-status', [CheckoutController::class, 'handlePayme
 // Order Routes
 Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
 Route::get('/orders/confirmed/{purchaseOrderId}', [OrderController::class, 'confirm'])->name('orders.confirm');
+Route::patch('/orders/{purchaseOrderId}/status', [OrderController::class, 'updateStatus'])->name('orders.update-status');
 
 // Stripe Webhook Route (exclude from CSRF protection)
 Route::post('/stripe/webhook', [StripeWebhookController::class, 'handle'])

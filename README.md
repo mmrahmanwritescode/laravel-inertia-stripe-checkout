@@ -47,7 +47,27 @@ Experience the complete checkout flow with real-time payment processing and webh
 - **Real-time payment validation**
 - **Automatic payment error handling**
 
-### 🔔 Comprehensive Webhook Integration
+### � Order Management System
+- **Interactive Order Status Management:**
+  - Cancel orders with reason tracking
+  - Confirm orders for preparation
+  - Mark orders as completed
+  - Status-specific UI displays
+- **Order Status Flow:**
+  - `order_in_progress` → `confirmed` → `completed`
+  - `order_in_progress` → `cancelled` (with refund handling)
+  - `confirmed` → `cancelled` (with refund processing)
+- **Smart Status Transitions:**
+  - Validation prevents invalid status changes
+  - Automatic refund initiation for Stripe payments
+  - Comprehensive cancellation reason tracking
+- **User-Friendly Interface:**
+  - Confirmation modals for critical actions
+  - Loading states during status updates
+  - Success/error message feedback
+  - Order-specific action buttons
+
+### �🔔 Comprehensive Webhook Integration
 - **Real-time order status updates**
 - **Payment event handling:**
   - `payment_intent.succeeded` - Order confirmation
@@ -65,6 +85,8 @@ Experience the complete checkout flow with real-time payment processing and webh
 - **Responsive design** with Bootstrap 5
 - **Loading states** and progress indicators
 - **Error recovery** and retry mechanisms
+- **Interactive order management** with status updates
+- **Real-time feedback** for all user actions
 - **Clean, modern UI/UX**
 
 ### 🔐 Security & Validation
@@ -173,6 +195,44 @@ npm run dev
 # Browse to: http://localhost:8000
 ```
 
+## 🔄 Order Status Management
+
+### Available Status Types
+- **`order_in_progress`** - Initial status after order placement
+- **`confirmed`** - Order confirmed and ready for preparation
+- **`completed`** - Order finished (delivered/picked up)
+- **`cancelled`** - Order cancelled by customer or restaurant
+
+### Status Transition Rules
+```
+order_in_progress → confirmed | cancelled
+confirmed → completed | cancelled  
+order_placed → confirmed | cancelled
+```
+
+### Interactive Management Features
+- **Cancel Orders:**
+  - Reason selection (changed mind, wrong order, too long wait, etc.)
+  - Custom reason text input
+  - Automatic refund processing for Stripe payments
+  - Confirmation modal with order details
+  
+- **Confirm Orders:**
+  - Quick status update from in-progress to confirmed
+  - Immediate UI feedback with success messages
+  - Kitchen notification preparation
+  
+- **Complete Orders:**
+  - Mark confirmed orders as completed
+  - Useful for tracking delivery/pickup completion
+  - Final status in order lifecycle
+
+### Security & Validation
+- **Status Transition Validation** - Prevents invalid status changes
+- **Authorized Updates Only** - Secure endpoint protection
+- **Comprehensive Logging** - All status changes tracked
+- **Error Handling** - Graceful failure recovery
+
 ## 🔄 Payment Flow
 
 ### Delivery/Takeaway Orders (Stripe Payment)
@@ -184,12 +244,14 @@ npm run dev
 6. **Payment processing** → Stripe handles payment
 7. **Webhook confirmation** → Real-time status updates
 8. **Success redirect** → Order confirmation page
+9. **Order management** → Interactive status updates (cancel/confirm/complete)
 
 ### Pay on Spot Orders
 1. **User fills checkout form** → Client-side validation
 2. **Form submission** → Server-side validation
 3. **Order creation** → Direct database storage
 4. **Success redirect** → Order confirmation page
+5. **Order management** → Interactive status updates (cancel/confirm/complete)
 
 ## 📁 Project Structure
 
@@ -301,6 +363,11 @@ php artisan view:cache
 - `POST /checkout/create-customer` - Create Stripe customer & order
 - `POST /checkout/store` - Store pay-on-spot orders
 - `POST /checkout/payment-status` - Handle payment status
+
+### Order Endpoints  
+- `GET /orders` - View order history
+- `GET /orders/confirmed/{purchaseOrderId}` - Order confirmation page
+- `PATCH /orders/{purchaseOrderId}/status` - Update order status
 
 ### Cart Endpoints  
 - `GET /cart` - View cart
