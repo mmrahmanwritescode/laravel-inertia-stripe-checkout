@@ -54,12 +54,12 @@ Experience the complete checkout flow with real-time payment processing and webh
   - Mark orders as completed
   - Status-specific UI displays
 - **Order Status Flow:**
-  - `order_in_progress` → `confirmed` → `completed`
-  - `order_in_progress` → `cancelled` (with refund handling)
-  - `confirmed` → `cancelled` (with refund processing)
+  - `order_in_progress` → `order_placed` → `confirmed`
+  - `order_in_progress` → `cancelled`
+  - `confirmed` → `cancelled` (without stripe refund processing)
 - **Smart Status Transitions:**
   - Validation prevents invalid status changes
-  - Automatic refund initiation for Stripe payments
+  - Automatic refund initiation for Stripe payments ( Not added - kept for future improvements )
   - Comprehensive cancellation reason tracking
 - **User-Friendly Interface:**
   - Confirmation modals for critical actions
