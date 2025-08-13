@@ -3,13 +3,24 @@
         <div class="container py-5">
             <div class="row justify-content-center">
                 <div class="col-lg-8">
-                    <!-- Success Icon -->
+                    <!-- Success/Progress Icon -->
                     <div class="text-center mb-4">
-                        <div class="d-inline-flex align-items-center justify-content-center bg-success bg-opacity-10 rounded-circle mb-3" style="width: 64px; height: 64px;">
-                            <i class="fas fa-check text-success" style="font-size: 2rem;"></i>
+                        <div 
+                            class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" 
+                            :class="order.status === 'confirmed' ? 'bg-success bg-opacity-10' : 'bg-warning bg-opacity-10'"
+                            style="width: 64px; height: 64px;"
+                        >
+                            <i 
+                                :class="order.status === 'confirmed' ? 'fas fa-check text-success' : 'fas fa-clock text-warning'" 
+                                style="font-size: 2rem;"
+                            ></i>
                         </div>
-                        <h1 class="display-6 text-dark mb-3">Order Confirmed!</h1>
-                        <p class="text-muted mb-4">Thank you for your order. Your order has been placed successfully.</p>
+                        <h1 class="display-6 text-dark mb-3">
+                            {{ order.status === 'confirmed' ? 'Order Confirmed!' : 'Order In Progress!' }}
+                        </h1>
+                        <p class="text-muted mb-4">
+                            {{ getStatusMessage(order.status) }}
+                        </p>
                     </div>
                     
                     <!-- Order Details -->
@@ -21,7 +32,14 @@
                                 <div class="col-md-6">
                                     <h6 class="fw-bold text-dark mb-2">Order Information</h6>
                                     <p class="text-muted small mb-1">Order #: {{ order.purchase_order_id }}</p>
-                                    <p class="text-muted small mb-1">Status: {{ formatStatus(order.status) }}</p>
+                                    <p class="small mb-1">
+                                        <span 
+                                            class="badge" 
+                                            :class="getStatusBadgeClass(order.status)"
+                                        >
+                                            Status: {{ formatStatus(order.status) }}
+                                        </span>
+                                    </p>
                                     <p class="text-muted small mb-1">Order Type: {{ formatOrderType(order.order_type) }}</p>
                                     <p class="text-muted small mb-1">Date: {{ formatDate(order.created_at) }}</p>
                                 </div>
@@ -87,6 +105,20 @@
                                 <h6 class="fw-bold text-dark mb-2">Payment Information</h6>
                                 <p class="text-muted small mb-1">Payment Method: Credit Card</p>
                                 <p class="text-muted small mb-1">Transaction ID: {{ order.transaction_id }}</p>
+                                <div v-if="order.status === 'order_in_progress'" class="alert alert-info small mt-2">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Payment is being processed. Order status will be updated automatically once payment is confirmed.
+                                </div>
+                            </div>
+                            
+                            <!-- Pay on Spot Information -->
+                            <div v-else-if="order.payment_method === 'N/A'" class="mt-4 pt-4 border-top">
+                                <h6 class="fw-bold text-dark mb-2">Payment Information</h6>
+                                <p class="text-muted small mb-1">Payment Method: Pay on Spot</p>
+                                <div v-if="order.status === 'order_in_progress'" class="alert alert-warning small mt-2">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                    Please prepare cash payment for when you {{ order.order_type === 'delivery' ? 'receive your order' : 'pick up your order' }}.
+                                </div>
                             </div>
                             
                             <!-- Notes -->
@@ -107,6 +139,31 @@
                                 View All Orders
                             </Link>
                         </div>
+                        
+                        <!-- Additional Info for In Progress Orders -->
+                        <div v-if="order.status === 'order_in_progress'" class="mt-4">
+                            <div class="alert alert-light border">
+                                <h6 class="fw-bold mb-2">
+                                    <i class="fas fa-info-circle text-primary me-1"></i>
+                                    What happens next?
+                                </h6>
+                                <div class="text-start small">
+                                    <div v-if="order.payment_method === 'stripe'" class="mb-2">
+                                        <strong>1. Payment Processing:</strong> Your payment is being verified by our payment provider.
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>{{ order.payment_method === 'stripe' ? '2' : '1' }}. Order Preparation:</strong> 
+                                        Once confirmed, our kitchen will start preparing your order.
+                                    </div>
+                                    <div class="mb-2">
+                                        <strong>{{ order.payment_method === 'stripe' ? '3' : '2' }}. Delivery/Pickup:</strong>
+                                        <span v-if="order.order_type === 'delivery'">Your order will be delivered to your address.</span>
+                                        <span v-else-if="order.order_type === 'takeaway'">You can pick up your order from our location.</span>
+                                        <span v-else>Please come to our location for payment and pickup.</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -122,8 +179,37 @@ defineProps({
     order: Object
 })
 
+const getStatusMessage = (status) => {
+    const messages = {
+        'confirmed': 'Thank you for your order. Your payment has been confirmed and order is being prepared!',
+        'order_in_progress': 'Thank you for your order. Your order has been placed and is currently being processed.',
+        'order_placed': 'Thank you for your order. Your order has been placed successfully!',
+        'cancelled': 'This order has been cancelled.',
+        'completed': 'Your order has been completed successfully!'
+    }
+    return messages[status] || 'Thank you for your order.'
+}
+
+const getStatusBadgeClass = (status) => {
+    const classes = {
+        'confirmed': 'bg-success',
+        'order_in_progress': 'bg-warning',
+        'order_placed': 'bg-primary',
+        'cancelled': 'bg-danger',
+        'completed': 'bg-success'
+    }
+    return classes[status] || 'bg-secondary'
+}
+
 const formatStatus = (status) => {
-    return status.split('_').map(word => 
+    const statusMap = {
+        'order_in_progress': 'In Progress',
+        'order_placed': 'Placed',
+        'confirmed': 'Confirmed',
+        'cancelled': 'Cancelled',
+        'completed': 'Completed'
+    }
+    return statusMap[status] || status.split('_').map(word => 
         word.charAt(0).toUpperCase() + word.slice(1)
     ).join(' ')
 }
