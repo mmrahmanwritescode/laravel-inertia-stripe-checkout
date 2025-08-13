@@ -198,15 +198,14 @@ npm run dev
 ## 🔄 Order Status Management
 
 ### Available Status Types
-- **`order_in_progress`** - Initial status after order placement
-- **`confirmed`** - Order confirmed and ready for preparation
-- **`completed`** - Order finished (delivered/picked up)
+- **`order_in_progress`** - Initial status before order placement
+- **`order_placed`** - Status after order placement
+- **`confirmed`** - Order confirmed and ready for preparation ( then delivered/picked up )
 - **`cancelled`** - Order cancelled by customer or restaurant
 
 ### Status Transition Rules
 ```
-order_in_progress → confirmed | cancelled
-confirmed → completed | cancelled  
+order_in_progress → order_placed | cancelled
 order_placed → confirmed | cancelled
 ```
 
@@ -214,7 +213,7 @@ order_placed → confirmed | cancelled
 - **Cancel Orders:**
   - Reason selection (changed mind, wrong order, too long wait, etc.)
   - Custom reason text input
-  - Automatic refund processing for Stripe payments
+  - Automatic refund processing for Stripe payments ( Not added yet )
   - Confirmation modal with order details
   
 - **Confirm Orders:**
@@ -223,7 +222,7 @@ order_placed → confirmed | cancelled
   - Kitchen notification preparation
   
 - **Complete Orders:**
-  - Mark confirmed orders as completed
+  - Mark confirmed orders as confirmed
   - Useful for tracking delivery/pickup completion
   - Final status in order lifecycle
 
